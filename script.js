@@ -6,6 +6,7 @@ let user = null;
 let products = [];
 let services = [];
 let currentPage = 'catalog';
+let deliveryAddress = '';
 
 // Initialize the app
 function initApp() {
@@ -205,7 +206,56 @@ function setupEventListeners() {
     if (subscribeBtn) subscribeBtn.addEventListener('click', handleSubscription);
     if (manageSubscription) manageSubscription.addEventListener('click', handleSubscription);
     
+    // Delivery options change
+    const deliveryOptions = document.querySelectorAll('input[name="delivery"]');
+    deliveryOptions.forEach(option => {
+        option.addEventListener('change', handleDeliveryOptionChange);
+    });
+    
+    // Address input change
+    const addressInput = document.getElementById('delivery-address');
+    if (addressInput) {
+        addressInput.addEventListener('input', handleAddressChange);
+    }
+    
     console.log('Event listeners setup completed');
+}
+
+// Delivery option change handler
+function handleDeliveryOptionChange() {
+    const selectedOption = document.querySelector('input[name="delivery"]:checked');
+    const addressSection = document.getElementById('address-section');
+    const toStep3Button = document.getElementById('to-step-3');
+    
+    if (selectedOption && selectedOption.value !== 'none') {
+        // Show address section for delivery options
+        addressSection.classList.remove('hidden');
+        // Disable proceed button until address is filled
+        toStep3Button.disabled = true;
+    } else {
+        // Hide address section for self-pickup
+        addressSection.classList.add('hidden');
+        // Enable proceed button for self-pickup
+        toStep3Button.disabled = false;
+    }
+    
+    // Update order summary preview
+    updateOrderSummary();
+}
+
+// Address input change handler
+function handleAddressChange() {
+    const addressInput = document.getElementById('delivery-address');
+    const toStep3Button = document.getElementById('to-step-3');
+    
+    if (addressInput) {
+        deliveryAddress = addressInput.value.trim();
+        // Enable/disable proceed button based on address input
+        const selectedOption = document.querySelector('input[name="delivery"]:checked');
+        if (selectedOption && selectedOption.value !== 'none') {
+            toStep3Button.disabled = !deliveryAddress;
+        }
+    }
 }
 
 // Page navigation
@@ -378,6 +428,11 @@ function switchCartStep(step) {
     const activeStepContent = document.getElementById(`cart-step-${step}`);
     if (activeStepContent) activeStepContent.classList.add('active');
     
+    // Reset address validation when going back to step 2
+    if (step === 2) {
+        handleDeliveryOptionChange();
+    }
+    
     // Update order summary for step 3
     if (step === 3) {
         updateOrderSummary();
@@ -407,10 +462,18 @@ function updateOrderSummary() {
     
     // Add delivery cost
     const deliveryOption = document.querySelector('input[name="delivery"]:checked');
+    let deliveryCost = 0;
+    let deliveryMethod = 'Самовывоз';
+    
     if (deliveryOption && deliveryOption.value !== 'none') {
-        let deliveryCost = 0;
-        if (deliveryOption.value === 'iskateli') deliveryCost = 15;
-        if (deliveryOption.value === 'naryan-mar') deliveryCost = 50;
+        if (deliveryOption.value === 'iskateli') {
+            deliveryCost = 15;
+            deliveryMethod = 'рп. Искателей';
+        }
+        if (deliveryOption.value === 'naryan-mar') {
+            deliveryCost = 50;
+            deliveryMethod = 'Нарьян-Мар';
+        }
         
         // Add exact time cost
         if (document.getElementById('exact-time').checked) {
@@ -420,8 +483,25 @@ function updateOrderSummary() {
         total += deliveryCost;
         summaryHTML += `
             <div class="order-delivery">
-                <span>Доставка</span>
+                <span>Доставка (${deliveryMethod})</span>
                 <span>${deliveryCost}₽</span>
+            </div>
+        `;
+        
+        // Add address to summary if provided
+        if (deliveryAddress) {
+            summaryHTML += `
+                <div class="order-address">
+                    <span>Адрес доставки:</span>
+                    <span class="address-text">${deliveryAddress}</span>
+                </div>
+            `;
+        }
+    } else {
+        summaryHTML += `
+            <div class="order-delivery">
+                <span>Самовывоз</span>
+                <span>0₽</span>
             </div>
         `;
     }
@@ -794,6 +874,20 @@ function confirmOrderHandler() {
     }
     
     const total = document.getElementById('final-total').textContent;
+    const deliveryOption = document.querySelector('input[name="delivery"]:checked');
+    
+    // Validate address for delivery options
+    if (deliveryOption && deliveryOption.value !== 'none' && !deliveryAddress) {
+        if (tg && tg.showPopup) {
+            tg.showPopup({
+                title: 'Ошибка',
+                message: 'Пожалуйста, укажите адрес доставки',
+                buttons: [{ type: 'close' }]
+            });
+        }
+        switchCartStep(2);
+        return;
+    }
     
     if (tg && tg.showPopup) {
         tg.showPopup({
@@ -810,9 +904,16 @@ function confirmOrderHandler() {
     
     // Clear cart after successful order
     cart = [];
+    deliveryAddress = '';
     saveCartToStorage();
     updateCartUI();
     switchPage('catalog');
+    
+    // Reset address field
+    const addressInput = document.getElementById('delivery-address');
+    if (addressInput) {
+        addressInput.value = '';
+    }
 }
 
 // Modal functions

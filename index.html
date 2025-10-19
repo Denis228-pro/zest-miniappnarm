@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -221,6 +220,20 @@
                         </div>
                     </div>
                     
+                    <!-- Address Input Field -->
+                    <div id="address-section" class="address-section hidden">
+                        <div class="form-group">
+                            <label for="delivery-address" class="form-label">Адрес доставки</label>
+                            <textarea 
+                                id="delivery-address" 
+                                class="form-textarea" 
+                                placeholder="Укажите полный адрес доставки (улица, дом, квартира, подъезд, этаж)"
+                                rows="3"
+                            ></textarea>
+                            <div class="form-hint">Обязательно для заполнения при выборе доставки</div>
+                        </div>
+                    </div>
+                    
                     <div class="time-option">
                         <input type="checkbox" id="exact-time">
                         <label for="exact-time">
@@ -241,7 +254,7 @@
 
                     <div class="step-navigation">
                         <button id="back-to-step-1" class="btn-secondary">Назад</button>
-                        <button id="to-step-3" class="btn-primary">Перейти к оплате</button>
+                        <button id="to-step-3" class="btn-primary" disabled>Перейти к оплате</button>
                     </div>
                 </div>
 
