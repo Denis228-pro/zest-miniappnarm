@@ -474,7 +474,7 @@ function renderProducts(productsToRender = products) {
         const productElement = document.createElement('div');
         productElement.className = 'product-card';
         productElement.innerHTML = `
-            <div class="product-image">${product.image || '🥤'}</div>
+            <img class="product-image" src="${product.image}">
             <div class="product-name">${product.name}</div>
             <div class="product-price">${product.price}₽</div>
             <div class="product-actions">
@@ -853,6 +853,7 @@ window.switchPage = switchPage;
 document.addEventListener('DOMContentLoaded', function() {
     initApp();
 });
+
 
 
 
