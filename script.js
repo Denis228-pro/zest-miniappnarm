@@ -9,7 +9,7 @@ let currentPage = 'catalog';
 let deliveryAddress = '';
 
 // Google Apps Script URL - ЗАМЕНИТЕ НА ВАШ URL
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyFyHGh_ukTdyVFG7Z2duQ6K6qxtNiNpcLQ4mF3bvYmc_VAtYU9LuOkeDzNajcQk_2V/exec';
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyFyHGh_ukTdyVFG7Z2duQ6K6qxtNiNpcLQ4mF3bvYmc_VAtYU9LuOkeDzNajcQk_2V/exec?action=getProducts';
 
 // Initialize the app
 async function initApp() {
@@ -853,5 +853,6 @@ window.switchPage = switchPage;
 document.addEventListener('DOMContentLoaded', function() {
     initApp();
 });
+
 
 
