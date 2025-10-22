@@ -9,7 +9,7 @@ let currentPage = 'catalog';
 let deliveryAddress = '';
 
 // Backend configuration
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbysGEOAI4Kt590mk6wJ4meSRLBhG_gGTD3Xou7ItJF0XHEo6T-jDhFSifYTtD1ZD-va9A/exec';
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbz5_dTUd5B3--C9wFWE7i4Vj_8scGTHWwTEDruN8yQ0dqXIlIqZHI42SJWcxwiWLNf3-w/exec';
 
 // Initialize the app
 function initApp() {
@@ -1095,3 +1095,4 @@ document.addEventListener('DOMContentLoaded', function() {
     initApp();
 
 });
+
