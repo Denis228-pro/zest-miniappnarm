@@ -58,7 +58,7 @@ async function initApp() {
                 buttons: [{ type: 'ok' }]
             });
         }
-    } *\
+    } */
     
     // Load products and services
     loadProducts();
@@ -1286,6 +1286,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded, initializing app...');
     initApp();
 });
+
 
 
 
