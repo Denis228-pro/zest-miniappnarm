@@ -853,3 +853,4 @@ window.switchPage = switchPage;
 document.addEventListener('DOMContentLoaded', function() {
     initApp();
 });
+
