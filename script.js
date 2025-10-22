@@ -9,7 +9,7 @@ let currentPage = 'catalog';
 let deliveryAddress = '';
 
 // Backend configuration - ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbz5_dTUd5B3--C9wFWE7i4Vj_8scGTHWwTEDruN8yQ0dqXIlIqZHI42SJWcxwiWLNf3-w/exec';
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyIYxN_BzpONGRmfEt5KjEXAfF6QuXwuS_pTxThZV_V3qQnYHtfzWHEcLd6AoEavnMLlQ/exec';
 
 // Initialize the app
 async function initApp() {
@@ -1286,3 +1286,4 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded, initializing app...');
     initApp();
 });
+
