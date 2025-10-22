@@ -8,8 +8,8 @@ let services = [];
 let currentPage = 'catalog';
 let deliveryAddress = '';
 
-// Backend configuration - ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwzA-ihgC3jTm4PK0oHFWvMrAFedsD6rDWTqe8Asy5vsHcY0-RE72SAT6kF_LQ6i_DL/exec';
+// Google Apps Script URL - ЗАМЕНИТЕ НА ВАШ URL
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyFyHGh_ukTdyVFG7Z2duQ6K6qxtNiNpcLQ4mF3bvYmc_VAtYU9LuOkeDzNajcQk_2V/exec';
 
 // Initialize the app
 async function initApp() {
@@ -21,8 +21,6 @@ async function initApp() {
         tg.enableClosingConfirmation();
         tg.setHeaderColor('#FF5A1F');
         tg.setBackgroundColor('#FFFFFF');
-    } else {
-        console.warn('Telegram WebApp not available');
     }
     
     // Check if user is already authenticated
@@ -32,37 +30,21 @@ async function initApp() {
             user = JSON.parse(savedUser);
             updateUserProfile();
         } catch (e) {
-            console.error('Error parsing user data:', e);
             localStorage.removeItem('zest_user');
         }
     }
     
     // Check age verification
     const ageVerified = localStorage.getItem('ageVerified');
-    console.log('Age verification status:', ageVerified);
-    
     if (ageVerified === 'true') {
         showMainApp();
     } else {
         showAgeVerification();
     }
-
-     // Test backend connection
-    const isBackendConnected = await testBackendConnection();
-    if (!isBackendConnected) {
-        console.warn('Backend is not available, using demo mode');
-        if (tg && tg.showPopup) {
-            tg.showPopup({
-                title: 'Демо-режим',
-                message: 'Сервер временно недоступен. Приложение работает в демо-режиме.',
-                buttons: [{ type: 'ok' }]
-            });
-        }
-    }
     
-    // Load products and services
-    loadProducts();
-    loadServices();
+    // Load products and services from Google Sheets
+    await loadProducts();
+    await loadServices();
     
     // Setup event listeners
     setupEventListeners();
@@ -73,122 +55,49 @@ async function initApp() {
     
     // Check subscription status
     checkSubscriptionStatus();
-    
-    console.log('ZeSt app initialized successfully');
-}
-
-// Test backend connection
-async function testBackendConnection() {
-    try {
-        console.log('Testing connection to:', BACKEND_URL);
-        
-        // Если URL не настроен, сразу возвращаем false
-        if (BACKEND_URL.includes('AKfycbwzA-ihgC3jTm4PK0oHFWvMrAFedsD6rDWTqe8Asy5vsHcY0-RE72SAT6kF_LQ6i_DL')) {
-            console.log('Backend URL not configured, using demo mode');
-            return false;
-        }
-        
-        const response = await fetch(`${BACKEND_URL}?action=getProducts`);
-        
-        if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Backend connection successful');
-            return true;
-        } else {
-            console.log('❌ Backend connection failed:', response.status);
-            return false;
-        }
-    } catch (error) {
-        console.log('❌ Backend connection error:', error.message);
-        return false;
-    }
 }
 
 // Age verification
 function showAgeVerification() {
-    console.log('Showing age verification');
     const ageVerification = document.getElementById('age-verification');
     const app = document.getElementById('app');
-    
     if (ageVerification) ageVerification.classList.remove('hidden');
     if (app) app.classList.add('hidden');
 }
 
 function showMainApp() {
-    console.log('Showing main app');
     const ageVerification = document.getElementById('age-verification');
     const app = document.getElementById('app');
-    
     if (ageVerification) ageVerification.classList.add('hidden');
     if (app) app.classList.remove('hidden');
 }
 
 // Event listeners setup
 function setupEventListeners() {
-    console.log('Setting up event listeners...');
-    
     // Age verification
     const ageConfirm = document.getElementById('age-confirm');
     const ageDeny = document.getElementById('age-deny');
     
-    if (ageConfirm) {
-        ageConfirm.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Age confirmed');
-            localStorage.setItem('ageVerified', 'true');
-            showMainApp();
-        });
-    } else {
-        console.error('Age confirm button not found');
-    }
+    if (ageConfirm) ageConfirm.addEventListener('click', () => {
+        localStorage.setItem('ageVerified', 'true');
+        showMainApp();
+    });
     
-    if (ageDeny) {
-        ageDeny.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Age denied');
-            if (tg && tg.showPopup) {
-                tg.showPopup({
-                    title: 'Доступ запрещен',
-                    message: 'Извините, доступ к магазину разрешен только с 18 лет',
-                    buttons: [{ type: 'close' }]
-                });
-            } else {
-                alert('Извините, доступ к магазину разрешен только с 18 лет');
-            }
-        });
-    } else {
-        console.error('Age deny button not found');
-    }
+    if (ageDeny) ageDeny.addEventListener('click', () => {
+        alert('Извините, доступ к магазину разрешен только с 18 лет');
+    });
     
     // Bottom Navigation
-    const navButtons = document.querySelectorAll('.bottom-navigation .nav-btn');
-    navButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
+    document.querySelectorAll('.bottom-navigation .nav-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
             const page = this.getAttribute('data-page');
-            console.log('Navigation to:', page);
             switchPage(page);
         });
     });
     
     // Header cart button
     const cartIndicator = document.getElementById('cart-indicator');
-    if (cartIndicator) {
-        cartIndicator.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Cart indicator clicked');
-            switchPage('cart');
-        });
-    }
-    
-    // Go to catalog buttons
-    const goToCatalogButtons = document.querySelectorAll('.go-to-catalog');
-    goToCatalogButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            switchPage('catalog');
-        });
-    });
+    if (cartIndicator) cartIndicator.addEventListener('click', () => switchPage('cart'));
     
     // Cart steps navigation
     const toStep2 = document.getElementById('to-step-2');
@@ -203,40 +112,27 @@ function setupEventListeners() {
     
     // Telegram auth
     const telegramAuth = document.getElementById('telegram-auth');
-    if (telegramAuth) {
-        telegramAuth.addEventListener('click', handleTelegramAuth);
-    }
+    if (telegramAuth) telegramAuth.addEventListener('click', handleTelegramAuth);
     
     // Logout
     const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-    }
+    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
     
     // Order confirmation
     const confirmOrder = document.getElementById('confirm-order');
-    if (confirmOrder) {
-        confirmOrder.addEventListener('click', confirmOrderHandler);
-    }
+    if (confirmOrder) confirmOrder.addEventListener('click', confirmOrderHandler);
     
     // Modal
     const closeModal = document.getElementById('close-modal');
-    if (closeModal) {
-        closeModal.addEventListener('click', closeModalHandler);
-    }
+    if (closeModal) closeModal.addEventListener('click', closeModalHandler);
     
-    // Search functionality
+    // Search and filters
     const searchInput = document.getElementById('search-input');
-    if (searchInput) {
-        searchInput.addEventListener('input', filterProducts);
-    }
+    if (searchInput) searchInput.addEventListener('input', filterProducts);
     
-    // Filter buttons
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    filterButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            filterButtons.forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             filterProducts();
         });
@@ -245,23 +141,17 @@ function setupEventListeners() {
     // ZeSt Club subscription
     const subscribeBtn = document.getElementById('subscribe-btn');
     const manageSubscription = document.getElementById('manage-subscription');
-    
     if (subscribeBtn) subscribeBtn.addEventListener('click', handleSubscription);
     if (manageSubscription) manageSubscription.addEventListener('click', handleSubscription);
     
-    // Delivery options change
-    const deliveryOptions = document.querySelectorAll('input[name="delivery"]');
-    deliveryOptions.forEach(option => {
+    // Delivery options
+    document.querySelectorAll('input[name="delivery"]').forEach(option => {
         option.addEventListener('change', handleDeliveryOptionChange);
     });
     
-    // Address input change
+    // Address input
     const addressInput = document.getElementById('delivery-address');
-    if (addressInput) {
-        addressInput.addEventListener('input', handleAddressChange);
-    }
-    
-    console.log('Event listeners setup completed');
+    if (addressInput) addressInput.addEventListener('input', handleAddressChange);
 }
 
 // Delivery option change handler
@@ -271,18 +161,12 @@ function handleDeliveryOptionChange() {
     const toStep3Button = document.getElementById('to-step-3');
     
     if (selectedOption && selectedOption.value !== 'none') {
-        // Show address section for delivery options
         addressSection.classList.remove('hidden');
-        // Disable proceed button until address is filled
         toStep3Button.disabled = true;
     } else {
-        // Hide address section for self-pickup
         addressSection.classList.add('hidden');
-        // Enable proceed button for self-pickup
         toStep3Button.disabled = false;
     }
-    
-    // Update order summary preview
     updateOrderSummary();
 }
 
@@ -293,7 +177,6 @@ function handleAddressChange() {
     
     if (addressInput) {
         deliveryAddress = addressInput.value.trim();
-        // Enable/disable proceed button based on address input
         const selectedOption = document.querySelector('input[name="delivery"]:checked');
         if (selectedOption && selectedOption.value !== 'none') {
             toStep3Button.disabled = !deliveryAddress;
@@ -303,28 +186,21 @@ function handleAddressChange() {
 
 // Page navigation
 function switchPage(pageName) {
-    console.log('Switching to page:', pageName);
     currentPage = pageName;
     
     // Update bottom navigation
     document.querySelectorAll('.bottom-navigation .nav-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    
     const activeNavBtn = document.querySelector(`.bottom-navigation [data-page="${pageName}"]`);
-    if (activeNavBtn) {
-        activeNavBtn.classList.add('active');
-    }
+    if (activeNavBtn) activeNavBtn.classList.add('active');
     
     // Update pages
     document.querySelectorAll('.page').forEach(page => {
         page.classList.remove('active');
     });
-    
     const activePage = document.getElementById(`${pageName}-page`);
-    if (activePage) {
-        activePage.classList.add('active');
-    }
+    if (activePage) activePage.classList.add('active');
     
     // Special handling for cart page
     if (pageName === 'cart') {
@@ -339,7 +215,6 @@ function loadCartFromStorage() {
         try {
             cart = JSON.parse(savedCart);
         } catch (e) {
-            console.error('Error parsing cart data:', e);
             cart = [];
         }
     }
@@ -350,10 +225,10 @@ function saveCartToStorage() {
 }
 
 function addToCart(productId, quantity = 1) {
-    const product = products.find(p => p.id === productId);
+    const product = products.find(p => p.id == productId);
     if (!product) return;
     
-    const existingItem = cart.find(item => item.productId === productId);
+    const existingItem = cart.find(item => item.productId == productId);
     
     if (existingItem) {
         existingItem.quantity += quantity;
@@ -369,14 +244,7 @@ function addToCart(productId, quantity = 1) {
     
     saveCartToStorage();
     updateCartUI();
-    
-    if (tg && tg.showPopup) {
-        tg.showPopup({
-            title: 'Добавлено в корзину',
-            message: `${product.name} добавлен в корзину`,
-            buttons: [{ type: 'ok' }]
-        });
-    }
+    showNotification(`${product.name} добавлен в корзину`, 'success');
 }
 
 function updateCartItemQuantity(productId, newQuantity) {
@@ -385,7 +253,7 @@ function updateCartItemQuantity(productId, newQuantity) {
         return;
     }
     
-    const item = cart.find(item => item.productId === productId);
+    const item = cart.find(item => item.productId == productId);
     if (item) {
         item.quantity = newQuantity;
         saveCartToStorage();
@@ -394,13 +262,12 @@ function updateCartItemQuantity(productId, newQuantity) {
 }
 
 function removeFromCart(productId) {
-    cart = cart.filter(item => item.productId !== productId);
+    cart = cart.filter(item => item.productId != productId);
     saveCartToStorage();
     updateCartUI();
 }
 
 function updateCartUI() {
-    // Update cart count in header
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     const cartCount = document.getElementById('cart-count');
     const bottomCartCount = document.getElementById('bottom-cart-count');
@@ -408,10 +275,8 @@ function updateCartUI() {
     if (cartCount) cartCount.textContent = totalItems;
     if (bottomCartCount) bottomCartCount.textContent = totalItems;
     
-    // Update cart page
     updateCartPage();
     
-    // Enable/disable proceed button
     const toStep2 = document.getElementById('to-step-2');
     if (toStep2) toStep2.disabled = totalItems === 0;
 }
@@ -457,29 +322,20 @@ function updateCartPage() {
 
 // Cart steps
 function switchCartStep(step) {
-    // Update steps indicator
     document.querySelectorAll('.step').forEach(stepEl => {
         stepEl.classList.remove('active');
     });
     const activeStep = document.querySelector(`[data-step="${step}"]`);
     if (activeStep) activeStep.classList.add('active');
     
-    // Update steps content
     document.querySelectorAll('.cart-step').forEach(stepContent => {
         stepContent.classList.remove('active');
     });
     const activeStepContent = document.getElementById(`cart-step-${step}`);
     if (activeStepContent) activeStepContent.classList.add('active');
     
-    // Reset address validation when going back to step 2
-    if (step === 2) {
-        handleDeliveryOptionChange();
-    }
-    
-    // Update order summary for step 3
-    if (step === 3) {
-        updateOrderSummary();
-    }
+    if (step === 2) handleDeliveryOptionChange();
+    if (step === 3) updateOrderSummary();
 }
 
 function updateOrderSummary() {
@@ -518,7 +374,6 @@ function updateOrderSummary() {
             deliveryMethod = 'Нарьян-Мар';
         }
         
-        // Add exact time cost
         if (document.getElementById('exact-time').checked) {
             deliveryCost += 10;
         }
@@ -531,7 +386,6 @@ function updateOrderSummary() {
             </div>
         `;
         
-        // Add address to summary if provided
         if (deliveryAddress) {
             summaryHTML += `
                 <div class="order-address">
@@ -549,7 +403,7 @@ function updateOrderSummary() {
         `;
     }
     
-    // Add payment method to summary
+    // Add payment method
     const paymentMethod = document.querySelector('input[name="payment"]:checked');
     if (paymentMethod) {
         const paymentText = paymentMethod.value === 'cash' ? 'Наличные при получении' : 'Перевод по СБП при получении';
@@ -565,36 +419,22 @@ function updateOrderSummary() {
     orderSummary.innerHTML = summaryHTML;
 }
 
-// Product management - UPDATED FOR GOOGLE SHEETS
+// Product management from Google Sheets
 async function loadProducts() {
     try {
-        console.log('Loading products from:', `${BACKEND_URL}?action=getProducts`);
-        
-        // Если URL не настроен, используем мок данные
-        if (BACKEND_URL.includes('YOUR_SCRIPT_ID')) {
-            throw new Error('Backend URL not configured');
-        }
-        
         const response = await fetch(`${BACKEND_URL}?action=getProducts`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.ok) {
+            const data = await response.json();
+            products = data;
+            renderProducts();
+        } else {
+            throw new Error('Failed to load products');
         }
-        
-        const data = await response.json();
-        
-        // Проверяем, если пришла ошибка
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        products = data;
-        console.log('Products loaded:', products.length);
-        renderProducts();
     } catch (error) {
         console.error('Error loading products:', error);
-        // Fallback mock data
-        products = getMockProducts();
+        showNotification('Ошибка загрузки товаров', 'error');
+        // Fallback to empty array
+        products = [];
         renderProducts();
     }
 }
@@ -628,7 +468,7 @@ function renderProducts(productsToRender = products) {
     grid.innerHTML = '';
     
     productsToRender.forEach(product => {
-        const cartItem = cart.find(item => item.productId === product.id);
+        const cartItem = cart.find(item => item.productId == product.id);
         const quantity = cartItem ? cartItem.quantity : 0;
         
         const productElement = document.createElement('div');
@@ -655,36 +495,21 @@ function renderProducts(productsToRender = products) {
     });
 }
 
-// Services management - UPDATED FOR GOOGLE SHEETS
+// Services management from Google Sheets
 async function loadServices() {
     try {
-        console.log('Loading services from:', `${BACKEND_URL}?action=getServices`);
-        
-        // Если URL не настроен, используем мок данные
-        if (BACKEND_URL.includes('YOUR_SCRIPT_ID')) {
-            throw new Error('Backend URL not configured');
-        }
-        
         const response = await fetch(`${BACKEND_URL}?action=getServices`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.ok) {
+            const data = await response.json();
+            services = data;
+            renderServices();
+        } else {
+            throw new Error('Failed to load services');
         }
-        
-        const data = await response.json();
-        
-        // Проверяем, если пришла ошибка
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        services = data;
-        console.log('Services loaded:', services.length);
-        renderServices();
     } catch (error) {
         console.error('Error loading services:', error);
-        // Fallback mock data
-        services = getMockServices();
+        // Fallback to empty array
+        services = [];
         renderServices();
     }
 }
@@ -712,92 +537,28 @@ function renderServices() {
     });
 }
 
-// Fallback order submission for demo
-function submitOrderDemo(orderData) {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const orderId = 'DEMO_' + Date.now();
-            console.log('📦 Demo order created:', orderId, orderData);
-            resolve({
-                success: true,
-                orderId: orderId,
-                message: 'Заказ создан в демо-режиме'
-            });
-        }, 1000);
-    });
-}
-
-// Order submission - IMPROVED ERROR HANDLING
+// Order submission to Google Sheets
 async function submitOrder(orderData) {
-    // Если BACKEND_URL не настроен, используем демо-режим
-    if (BACKEND_URL.includes('YOUR_SCRIPT_ID')) {
-        console.log('🔄 Using demo mode (BACKEND_URL not configured)');
-        return await submitOrderDemo(orderData);
-    }
-    
     try {
-        console.log('🔄 Submitting order to:', BACKEND_URL);
-        console.log('Order data:', orderData);
-
-        // Добавляем таймаут для запроса
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
-
         const response = await fetch(`${BACKEND_URL}?action=createOrder`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(orderData),
-            signal: controller.signal
+            body: JSON.stringify(orderData)
         });
 
-        clearTimeout(timeoutId);
-
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
-
         if (!response.ok) {
-            let errorText = 'Network error';
-            try {
-                errorText = await response.text();
-            } catch (e) {
-                errorText = `HTTP ${response.status}: ${response.statusText}`;
-            }
-            throw new Error(errorText);
+            throw new Error('Network error');
         }
 
         const result = await response.json();
-        console.log('Order submission result:', result);
-
-        if (result.error) {
-            throw new Error(result.error);
-        }
-
         return result;
     } catch (error) {
-        console.error('❌ Error submitting order:', error);
-        
-        if (error.name === 'AbortError') {
-            return { 
-                success: false, 
-                error: 'Request timeout: Server took too long to respond',
-                orderId: 'DEMO_' + Date.now()
-            };
-        }
-        
-        if (error.message.includes('Failed to fetch')) {
-            return { 
-                success: false, 
-                error: 'Network error: Cannot connect to server. Please check your internet connection and try again.',
-                orderId: 'DEMO_' + Date.now()
-            };
-        }
-        
+        console.error('Error submitting order:', error);
         return { 
             success: false, 
-            error: error.message,
-            orderId: 'DEMO_' + Date.now()
+            error: error.message
         };
     }
 }
@@ -834,22 +595,9 @@ function handleTelegramAuth() {
         user = tg.initDataUnsafe.user;
         saveUserToStorage();
         updateUserProfile();
-        
-        if (tg.showPopup) {
-            tg.showPopup({
-                title: 'Успешная авторизация!',
-                message: `Добро пожаловать, ${user.first_name || 'пользователь'}!`,
-                buttons: [{ type: 'ok' }]
-            });
-        }
+        showNotification(`Добро пожаловать, ${user.first_name || 'пользователь'}!`, 'success');
     } else {
-        if (tg && tg.showPopup) {
-            tg.showPopup({
-                title: 'Ошибка авторизации',
-                message: 'Не удалось получить данные пользователя. Пожалуйста, попробуйте еще раз.',
-                buttons: [{ type: 'close' }]
-            });
-        }
+        showNotification('Ошибка авторизации', 'error');
     }
 }
 
@@ -858,44 +606,10 @@ function saveUserToStorage() {
 }
 
 function handleLogout() {
-    if (tg && tg.showPopup) {
-        tg.showPopup({
-            title: 'Выход из аккаунта',
-            message: 'Вы уверены, что хотите выйти?',
-            buttons: [
-                {
-                    type: 'destructive',
-                    text: 'Выйти',
-                    id: 'logout'
-                },
-                {
-                    type: 'cancel',
-                    id: 'cancel'
-                }
-            ]
-        });
-        
-        tg.onEvent('popupClosed', (data) => {
-            if (data.button_id === 'logout') {
-                user = null;
-                localStorage.removeItem('zest_user');
-                updateUserProfile();
-                
-                if (tg.showPopup) {
-                    tg.showPopup({
-                        title: 'Вы вышли из аккаунта',
-                        message: 'Для доступа к персональным функциям войдите снова',
-                        buttons: [{ type: 'ok' }]
-                    });
-                }
-            }
-        });
-    } else {
-        user = null;
-        localStorage.removeItem('zest_user');
-        updateUserProfile();
-        alert('Вы вышли из аккаунта');
-    }
+    user = null;
+    localStorage.removeItem('zest_user');
+    updateUserProfile();
+    showNotification('Вы вышли из аккаунта', 'info');
 }
 
 function updateUserProfile() {
@@ -911,31 +625,24 @@ function updateUserProfile() {
     if (!authSection || !profileContent) return;
     
     if (user) {
-        // User is logged in
         authSection.classList.add('hidden');
         profileContent.classList.remove('hidden');
         
-        // Update user info
         if (userName) userName.textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Пользователь';
         if (userPhone) userPhone.textContent = user.phone_number || 'Телефон не указан';
-        
-        // Update profile details
         if (profileName) profileName.textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Не указано';
         if (profilePhone) profilePhone.textContent = user.phone_number || 'Не указан';
         if (profileUsername) profileUsername.textContent = user.username ? `@${user.username}` : 'Не указан';
         if (profileId) profileId.textContent = user.id || 'Не доступен';
         
-        // Update avatar with user photo if available
         const userAvatar = document.getElementById('user-avatar');
         if (userAvatar && user.photo_url) {
             userAvatar.innerHTML = `<img src="${user.photo_url}" alt="Аватар" class="user-avatar-img">`;
         }
     } else {
-        // User is not logged in
         authSection.classList.remove('hidden');
         profileContent.classList.add('hidden');
         
-        // Reset user info
         if (userName) userName.textContent = 'Гость';
         if (userPhone) userPhone.textContent = 'Войдите через Telegram';
         const userAvatar = document.getElementById('user-avatar');
@@ -953,50 +660,19 @@ function updateUserProfile() {
 // ZeSt Club subscription
 function handleSubscription() {
     if (!user) {
-        if (tg && tg.showPopup) {
-            tg.showPopup({
-                title: 'Требуется авторизация',
-                message: 'Для оформления подписки необходимо войти в аккаунт',
-                buttons: [{ type: 'ok' }]
-            });
-        }
+        showNotification('Для оформления подписки необходимо войти в аккаунт', 'error');
         switchPage('profile');
         return;
     }
     
-    if (tg && tg.showPopup) {
-        tg.showPopup({
-            title: 'ZeSt Club',
-            message: 'Оформление премиум подписки за 350₽/месяц',
-            buttons: [
-                {
-                    type: 'default',
-                    text: 'Оформить',
-                    id: 'subscribe'
-                },
-                {
-                    type: 'cancel',
-                    id: 'cancel'
-                }
-            ]
-        });
-        
-        tg.onEvent('popupClosed', (data) => {
-            if (data.button_id === 'subscribe') {
-                activateSubscription();
-            }
-        });
-    } else {
-        if (confirm('Оформить премиум подписку за 350₽/месяц?')) {
-            activateSubscription();
-        }
+    if (confirm('Оформить премиум подписку за 350₽/месяц?')) {
+        activateSubscription();
     }
 }
 
 function activateSubscription() {
     const expiryDate = getNextMonthDate();
     
-    // Update club status
     const clubStatus = document.getElementById('club-status');
     const profileClubStatus = document.getElementById('profile-club-status');
     
@@ -1017,19 +693,12 @@ function activateSubscription() {
         `;
     }
     
-    // Save subscription status
     localStorage.setItem('zest_club_subscription', JSON.stringify({
         active: true,
         expiry: expiryDate
     }));
     
-    if (tg && tg.showPopup) {
-        tg.showPopup({
-            title: 'Успешно!',
-            message: 'Премиум подписка активирована',
-            buttons: [{ type: 'ok' }]
-        });
-    }
+    showNotification('Премиум подписка активирована!', 'success');
 }
 
 function getNextMonthDate() {
@@ -1038,14 +707,12 @@ function getNextMonthDate() {
     return date.toLocaleDateString('ru-RU');
 }
 
-// Check subscription status on app load
 function checkSubscriptionStatus() {
     const subscription = localStorage.getItem('zest_club_subscription');
     if (subscription) {
         try {
             const subData = JSON.parse(subscription);
             if (subData.active && new Date(subData.expiry) > new Date()) {
-                // Subscription is active
                 const clubStatus = document.getElementById('club-status');
                 const profileClubStatus = document.getElementById('profile-club-status');
                 
@@ -1072,7 +739,7 @@ function checkSubscriptionStatus() {
     }
 }
 
-// Order confirmation - IMPROVED WITH BETTER ERROR HANDLING
+// Order confirmation
 async function confirmOrderHandler() {
     if (cart.length === 0) {
         showNotification('Корзина пуста', 'error');
@@ -1095,7 +762,6 @@ async function confirmOrderHandler() {
         return;
     }
     
-    // Показываем индикатор загрузки
     const confirmButton = document.getElementById('confirm-order');
     const originalText = confirmButton.innerHTML;
     confirmButton.innerHTML = '⌛ Отправка заказа...';
@@ -1117,11 +783,10 @@ async function confirmOrderHandler() {
             exactTimeCost: document.getElementById('exact-time').checked ? 10 : 0
         };
 
-        console.log('📦 Sending order data:', orderData);
         const result = await submitOrder(orderData);
         
         if (result.success) {
-            showNotification(`✅ Заказ #${result.orderId} успешно создан! Способ оплаты: ${paymentMethodText}`, 'success');
+            showNotification(`✅ Заказ #${result.orderId} успешно создан!`, 'success');
             
             // Clear cart after successful order
             cart = [];
@@ -1130,44 +795,19 @@ async function confirmOrderHandler() {
             updateCartUI();
             switchPage('catalog');
             
-            // Reset address field
+            // Reset form
             const addressInput = document.getElementById('delivery-address');
-            if (addressInput) {
-                addressInput.value = '';
-            }
+            if (addressInput) addressInput.value = '';
             
-            // Reset delivery option
             const selfPickup = document.getElementById('delivery-none');
-            if (selfPickup) {
-                selfPickup.checked = true;
-            }
+            if (selfPickup) selfPickup.checked = true;
             
         } else {
-            // Если заказ не отправился, но у нас есть demo orderId, все равно очищаем корзину
-            if (result.orderId && result.orderId.startsWith('DEMO_')) {
-                showNotification(`⚠️ Заказ #${result.orderId} создан в демо-режиме. ${result.error}`, 'warning');
-                
-                // Clear cart anyway for demo mode
-                cart = [];
-                deliveryAddress = '';
-                saveCartToStorage();
-                updateCartUI();
-                switchPage('catalog');
-                
-                // Reset form
-                const addressInput = document.getElementById('delivery-address');
-                if (addressInput) {
-                    addressInput.value = '';
-                }
-            } else {
-                showNotification('❌ Ошибка при создании заказа: ' + result.error, 'error');
-            }
+            showNotification('❌ Ошибка при создании заказа: ' + result.error, 'error');
         }
     } catch (error) {
-        console.error('Unexpected error in confirmOrderHandler:', error);
         showNotification('❌ Неожиданная ошибка: ' + error.message, 'error');
     } finally {
-        // Восстанавливаем кнопку в любом случае
         confirmButton.innerHTML = originalText;
         confirmButton.disabled = false;
     }
@@ -1177,8 +817,7 @@ function showNotification(message, type = 'info') {
     if (tg && tg.showPopup) {
         tg.showPopup({
             title: type === 'success' ? 'Успешно!' : 
-                   type === 'error' ? 'Ошибка' : 
-                   type === 'warning' ? 'Внимание' : 'Информация',
+                   type === 'error' ? 'Ошибка' : 'Информация',
             message: message,
             buttons: [{ type: 'ok' }]
         });
@@ -1202,78 +841,7 @@ function closeModalHandler() {
     if (modal) modal.classList.add('hidden');
 }
 
-// Mock data (for development)
-function getMockProducts() {
-    return [
-        {
-            id: '1',
-            name: 'Red Bull',
-            price: 150,
-            image: '🔴',
-            category: 'energy'
-        },
-        {
-            id: '2',
-            name: 'Burn',
-            price: 120,
-            image: '🔥',
-            category: 'energy'
-        },
-        {
-            id: '3',
-            name: 'Coca-Cola',
-            price: 80,
-            image: '🥤',
-            category: 'soft'
-        },
-        {
-            id: '4',
-            name: 'Adrenaline Rush',
-            price: 130,
-            image: '⚡',
-            category: 'energy'
-        },
-        {
-            id: '5',
-            name: 'Aqua Minerale',
-            price: 50,
-            image: '💧',
-            category: 'water'
-        },
-        {
-            id: '6',
-            name: 'Monster',
-            price: 160,
-            image: '👹',
-            category: 'energy'
-        }
-    ];
-}
-
-function getMockServices() {
-    return [
-        {
-            id: '1',
-            name: 'Холодная доставка',
-            price: 20,
-            type: 'delivery'
-        },
-        {
-            id: '2',
-            name: 'Подарочная упаковка',
-            price: 30,
-            type: 'packaging'
-        },
-        {
-            id: '3',
-            name: 'Срочная доставка',
-            price: 50,
-            type: 'delivery'
-        }
-    ];
-}
-
-// Make functions available globally for onclick handlers
+// Make functions available globally
 window.addToCart = addToCart;
 window.updateCartItemQuantity = updateCartItemQuantity;
 window.removeFromCart = removeFromCart;
@@ -1283,16 +851,5 @@ window.switchPage = switchPage;
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM fully loaded, initializing app...');
     initApp();
 });
-
-
-
-
-
-
-
-
-
-
