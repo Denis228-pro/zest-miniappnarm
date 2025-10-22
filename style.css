@@ -1781,10 +1781,3 @@ input:checked + label .checkbox-check::after {
         border-color: #333333;
     }
 }
-
-
-
-
-
-
-
