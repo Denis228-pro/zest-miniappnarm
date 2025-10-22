@@ -46,6 +46,13 @@ async function initApp() {
     } else {
         showAgeVerification();
     }
+
+     // Test backend connection
+    const backendConnected = await testBackendConnection();
+    if (!backendConnected) {
+        console.log('Backend connection failed, using demo mode');
+        // Demo mode - Замените на свой URL
+        BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyTNPIj-9iPUy4igIHziWrFheSK1DBGKvgK5EJODCCDI0Mfl6qqs}
     }
     
     // Load products and services
@@ -1274,6 +1281,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded, initializing app...');
     initApp();
 });
+
 
 
 
