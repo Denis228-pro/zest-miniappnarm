@@ -47,19 +47,6 @@ async function initApp() {
         showAgeVerification();
     }
     
-    // Test backend connection first
-    /* const isBackendConnected = await testBackendConnection();
-    if (!isBackendConnected) {
-        console.warn('Backend is not available, using demo mode');
-        if (tg && tg.showPopup) {
-            tg.showPopup({
-                title: 'Демо-режим',
-                message: 'Сервер временно недоступен. Приложение работает в демо-режиме.',
-                buttons: [{ type: 'ok' }]
-            });
-        }
-    } */
-    
     // Load products and services
     loadProducts();
     loadServices();
@@ -1286,6 +1273,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded, initializing app...');
     initApp();
 });
+
 
 
 
