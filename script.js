@@ -8,6 +8,9 @@ let services = [];
 let currentPage = 'catalog';
 let deliveryAddress = '';
 
+// Backend configuration
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbysGEOAI4Kt590mk6wJ4meSRLBhG_gGTD3Xou7ItJF0XHEo6T-jDhFSifYTtD1ZD-va9A/exec';
+
 // Initialize the app
 function initApp() {
     console.log('Initializing ZeSt app...');
@@ -84,7 +87,7 @@ function showMainApp() {
 function setupEventListeners() {
     console.log('Setting up event listeners...');
     
-    // Age verification - FIXED: Added proper event listeners
+    // Age verification
     const ageConfirm = document.getElementById('age-confirm');
     const ageDeny = document.getElementById('age-deny');
     
@@ -506,15 +509,27 @@ function updateOrderSummary() {
         `;
     }
     
+    // Add payment method to summary
+    const paymentMethod = document.querySelector('input[name="payment"]:checked');
+    if (paymentMethod) {
+        const paymentText = paymentMethod.value === 'cash' ? 'Наличные при получении' : 'Перевод по СБП при получении';
+        summaryHTML += `
+            <div class="order-payment">
+                <span>Способ оплаты:</span>
+                <span>${paymentText}</span>
+            </div>
+        `;
+    }
+    
     finalTotalElement.textContent = total;
     orderSummary.innerHTML = summaryHTML;
 }
 
-// Product management
+// Product management - UPDATED FOR GOOGLE SHEETS
 async function loadProducts() {
     try {
-        // This would be replaced with your Google Apps Script URL
-        const response = await fetch('YOUR_GOOGLE_APPS_SCRIPT_URL?action=getProducts');
+        const response = await fetch(`${BACKEND_URL}?action=getProducts`);
+        if (!response.ok) throw new Error('Network error');
         products = await response.json();
         renderProducts();
     } catch (error) {
@@ -565,7 +580,10 @@ function renderProducts(productsToRender = products) {
             <div class="product-price">${product.price}₽</div>
             <div class="product-actions">
                 ${quantity === 0 ? 
-                    `<button class="btn-primary" onclick="addToCart('${product.id}', 1)">В корзину</button>` :
+                    `<button class="btn-primary" onclick="addToCart('${product.id}', 1)">
+                        <span class="btn-glow"></span>
+                        В корзину
+                    </button>` :
                     `<div class="quantity-controls">
                         <button class="quantity-btn" onclick="updateCartItemQuantity('${product.id}', ${quantity - 1})">-</button>
                         <span class="quantity-display">${quantity}</span>
@@ -578,11 +596,11 @@ function renderProducts(productsToRender = products) {
     });
 }
 
-// Services management
+// Services management - UPDATED FOR GOOGLE SHEETS
 async function loadServices() {
     try {
-        // This would be replaced with your Google Apps Script URL
-        const response = await fetch('YOUR_GOOGLE_APPS_SCRIPT_URL?action=getServices');
+        const response = await fetch(`${BACKEND_URL}?action=getServices`);
+        if (!response.ok) throw new Error('Network error');
         services = await response.json();
         renderServices();
     } catch (error) {
@@ -614,6 +632,51 @@ function renderServices() {
         `;
         servicesList.appendChild(serviceElement);
     });
+}
+
+// Order submission - UPDATED FOR GOOGLE SHEETS
+async function submitOrder(orderData) {
+    try {
+        const response = await fetch(`${BACKEND_URL}?action=createOrder`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        if (!response.ok) throw new Error('Order submission failed');
+        return await response.json();
+    } catch (error) {
+        console.error('Error submitting order:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+function calculateDeliveryCost() {
+    const deliveryOption = document.querySelector('input[name="delivery"]:checked');
+    let cost = 0;
+    
+    if (deliveryOption.value === 'iskateli') cost = 15;
+    if (deliveryOption.value === 'naryan-mar') cost = 50;
+    if (document.getElementById('exact-time').checked) cost += 10;
+    
+    return cost;
+}
+
+function getSelectedServices() {
+    const selectedServices = [];
+    services.forEach(service => {
+        const checkbox = document.getElementById(`service-${service.id}`);
+        if (checkbox && checkbox.checked) {
+            selectedServices.push({
+                id: service.id,
+                name: service.name,
+                price: service.price
+            });
+        }
+    });
+    return selectedServices;
 }
 
 // Telegram authentication
@@ -860,59 +923,75 @@ function checkSubscriptionStatus() {
     }
 }
 
-// Order confirmation
-function confirmOrderHandler() {
+// Order confirmation - UPDATED FOR GOOGLE SHEETS AND PAYMENT METHODS
+async function confirmOrderHandler() {
     if (cart.length === 0) {
-        if (tg && tg.showPopup) {
-            tg.showPopup({
-                title: 'Ошибка',
-                message: 'Корзина пуста',
-                buttons: [{ type: 'close' }]
-            });
-        }
+        showNotification('Корзина пуста', 'error');
         return;
     }
-    
-    const total = document.getElementById('final-total').textContent;
-    const deliveryOption = document.querySelector('input[name="delivery"]:checked');
+
+    const paymentMethod = document.querySelector('input[name="payment"]:checked');
+    if (!paymentMethod) {
+        showNotification('Пожалуйста, выберите способ оплаты', 'error');
+        return;
+    }
+
+    const paymentMethodText = paymentMethod.value === 'cash' ? 'Наличные' : 'Перевод по СБП';
     
     // Validate address for delivery options
+    const deliveryOption = document.querySelector('input[name="delivery"]:checked');
     if (deliveryOption && deliveryOption.value !== 'none' && !deliveryAddress) {
-        if (tg && tg.showPopup) {
-            tg.showPopup({
-                title: 'Ошибка',
-                message: 'Пожалуйста, укажите адрес доставки',
-                buttons: [{ type: 'close' }]
-            });
-        }
+        showNotification('Пожалуйста, укажите адрес доставки', 'error');
         switchCartStep(2);
         return;
     }
     
+    const orderData = {
+        userId: user ? user.id : 'guest',
+        userName: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : 'Гость',
+        userPhone: user ? user.phone_number : '',
+        items: cart,
+        deliveryOption: deliveryOption.value,
+        deliveryAddress: deliveryAddress,
+        deliveryCost: calculateDeliveryCost(),
+        paymentMethod: paymentMethodText,
+        totalAmount: document.getElementById('final-total').textContent,
+        services: getSelectedServices(),
+        exactTime: document.getElementById('exact-time').checked,
+        exactTimeCost: document.getElementById('exact-time').checked ? 10 : 0
+    };
+
+    const result = await submitOrder(orderData);
+    
+    if (result.success) {
+        showNotification(`Заказ #${result.orderId} успешно создан! Способ оплаты: ${paymentMethodText}`, 'success');
+        
+        // Clear cart after successful order
+        cart = [];
+        deliveryAddress = '';
+        saveCartToStorage();
+        updateCartUI();
+        switchPage('catalog');
+        
+        // Reset address field
+        const addressInput = document.getElementById('delivery-address');
+        if (addressInput) {
+            addressInput.value = '';
+        }
+    } else {
+        showNotification('Ошибка при создании заказа: ' + result.error, 'error');
+    }
+}
+
+function showNotification(message, type = 'info') {
     if (tg && tg.showPopup) {
         tg.showPopup({
-            title: 'Заказ подтвержден!',
-            message: `Ваш заказ на сумму ${total}₽ принят в обработку. Скоро с вами свяжется оператор.`,
-            buttons: [{
-                type: 'close',
-                id: 'close'
-            }]
+            title: type === 'success' ? 'Успешно!' : 'Ошибка',
+            message: message,
+            buttons: [{ type: 'ok' }]
         });
     } else {
-        alert(`Ваш заказ на сумму ${total}₽ принят в обработку. Скоро с вами свяжется оператор.`);
-    }
-    
-    // Clear cart after successful order
-    cart = [];
-    deliveryAddress = '';
-    saveCartToStorage();
-    updateCartUI();
-    switchPage('catalog');
-    
-    // Reset address field
-    const addressInput = document.getElementById('delivery-address');
-    if (addressInput) {
-        addressInput.value = '';
+        alert(message);
     }
 }
 

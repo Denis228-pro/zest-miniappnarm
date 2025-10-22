@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZeSt - Премиум энергетики</title>
-    <meta name="description" content="Магазин премиальных энергетических напитков ZeSt. Энергия в каждом глотке!">
-    <meta name="keywords" content="энергетики, напитки, доставка, ZeSt, энергия">
+    <title>ZeSt - Премиум напитки</title>
+    <meta name="description" content="Магазин премиальных напитков ZeSt. Энергия в каждом глотке!">
+    <meta name="keywords" content="напитки, доставка, ZeSt, энергия">
     <meta name="theme-color" content="#FF5A1F">
     
     <!-- Telegram Web App -->
@@ -21,15 +21,20 @@
     <div id="age-verification" class="age-verification">
         <div class="age-content">
             <div class="age-logo">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                </svg>
+                <div class="logo-sparkle">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                    </svg>
+                </div>
                 <span>ZeSt</span>
             </div>
             <h2>Добро пожаловать!</h2>
             <p>Для доступа к магазину подтвердите, что вам есть 18 лет</p>
             <div class="age-buttons">
-                <button id="age-confirm" class="btn-primary">Мне есть 18 лет</button>
+                <button id="age-confirm" class="btn-primary">
+                    <span class="btn-glow"></span>
+                    Мне есть 18 лет
+                </button>
                 <button id="age-deny" class="btn-secondary">Мне нет 18 лет</button>
             </div>
         </div>
@@ -39,6 +44,7 @@
     <div id="app" class="app-container hidden">
         <!-- Header -->
         <header class="header">
+            <div class="header-background"></div>
             <div class="logo">
                 <h1>ZeSt</h1>
                 <span>Энергия в каждом глотке</span>
@@ -85,9 +91,11 @@
             <div id="club-page" class="page">
                 <div class="club-header">
                     <div class="club-badge">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        </svg>
+                        <div class="badge-sparkle">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
                     </div>
                     <h2>ZeSt Club</h2>
                     <p>Премиум подписка с эксклюзивными преимуществами</p>
@@ -95,6 +103,7 @@
                 
                 <div class="club-benefits">
                     <div class="benefit-card">
+                        <div class="benefit-glow"></div>
                         <div class="benefit-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
@@ -106,6 +115,7 @@
                         </div>
                     </div>
                     <div class="benefit-card">
+                        <div class="benefit-glow"></div>
                         <div class="benefit-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -113,10 +123,11 @@
                         </div>
                         <div class="benefit-content">
                             <h3>Специальные цены</h3>
-                            <p>Скидки до 20% на все энергетики и эксклюзивные предложения</p>
+                            <p>Скидки до 20% на все напитки и эксклюзивные предложения</p>
                         </div>
                     </div>
                     <div class="benefit-card">
+                        <div class="benefit-glow"></div>
                         <div class="benefit-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M20 12V22H4V12M22 7H2V12H22V7zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>
@@ -128,6 +139,7 @@
                         </div>
                     </div>
                     <div class="benefit-card">
+                        <div class="benefit-glow"></div>
                         <div class="benefit-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
@@ -141,6 +153,7 @@
                 </div>
 
                 <div class="subscription-card">
+                    <div class="card-glow"></div>
                     <div class="subscription-header">
                         <h3>Премиум подписка</h3>
                         <div class="subscription-price">
@@ -148,7 +161,10 @@
                             <span class="period">/месяц</span>
                         </div>
                     </div>
-                    <button id="subscribe-btn" class="btn-club">Оформить подписку</button>
+                    <button id="subscribe-btn" class="btn-club">
+                        <span class="btn-glow"></span>
+                        Оформить подписку
+                    </button>
                     <div class="club-status" id="club-status">
                         <span class="status-text">Статус: Не активен</span>
                     </div>
@@ -181,7 +197,10 @@
                     <div class="cart-total">
                         <strong>Итого: <span id="cart-total-price">0</span>₽</strong>
                     </div>
-                    <button id="to-step-2" class="btn-primary" disabled>Перейти к доставке</button>
+                    <button id="to-step-2" class="btn-primary" disabled>
+                        <span class="btn-glow"></span>
+                        Перейти к доставке
+                    </button>
                 </div>
 
                 <!-- Step 2: Delivery Options -->
@@ -189,7 +208,7 @@
                     <h2>Выберите доставку</h2>
                     <div class="delivery-options">
                         <div class="delivery-option">
-                            <input type="radio" name="delivery" id="delivery-none" value="none">
+                            <input type="radio" name="delivery" id="delivery-none" value="none" checked>
                             <label for="delivery-none">
                                 <div class="option-content">
                                     <strong>Самовывоз</strong>
@@ -254,7 +273,10 @@
 
                     <div class="step-navigation">
                         <button id="back-to-step-1" class="btn-secondary">Назад</button>
-                        <button id="to-step-3" class="btn-primary" disabled>Перейти к оплате</button>
+                        <button id="to-step-3" class="btn-primary" disabled>
+                            <span class="btn-glow"></span>
+                            Перейти к оплате
+                        </button>
                     </div>
                 </div>
 
@@ -264,10 +286,39 @@
                     <div id="order-summary">
                         <!-- Order summary will be here -->
                     </div>
+
+                    <!-- Payment Methods Section -->
+                    <div class="payment-methods">
+                        <h3>Способ оплаты</h3>
+                        <div class="payment-option">
+                            <input type="radio" name="payment" id="payment-cash" value="cash" checked>
+                            <label for="payment-cash">
+                                <div class="option-content">
+                                    <strong>Наличные при получении</strong>
+                                    <span>Оплата наличными курьеру</span>
+                                </div>
+                                <div class="radio-check"></div>
+                            </label>
+                        </div>
+                        <div class="payment-option">
+                            <input type="radio" name="payment" id="payment-sbp" value="sbp">
+                            <label for="payment-sbp">
+                                <div class="option-content">
+                                    <strong>Перевод по СБП</strong>
+                                    <span>Оплата через СБП при получении</span>
+                                </div>
+                                <div class="radio-check"></div>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="final-total">
                         <strong>К оплате: <span id="final-total">0</span>₽</strong>
                     </div>
-                    <button id="confirm-order" class="btn-primary">Подтвердить заказ</button>
+                    <button id="confirm-order" class="btn-primary">
+                        <span class="btn-glow"></span>
+                        Подтвердить заказ
+                    </button>
                     <div class="step-navigation">
                         <button id="back-to-step-2" class="btn-secondary">Назад</button>
                     </div>
@@ -295,6 +346,7 @@
                         <p>Чтобы получить доступ ко всем функциям приложения</p>
                     </div>
                     <button id="telegram-auth" class="btn-telegram">
+                        <span class="btn-glow"></span>
                         <span class="btn-icon">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.78 5.42-.9 6.8-.06.67-.36.9-.89.56-2.45-1.83-3.57-2.98-5.79-4.78-.45-.34-.77-1.09.08-1.94 1.34-1.34 2.87-2.87 3.83-3.67.9-.76 1.81-.56 2.29.34.56 1.07.67 3.42 1.39 3.43z"/>
@@ -389,6 +441,7 @@
 
         <!-- Bottom Navigation -->
         <nav class="bottom-navigation">
+            <div class="nav-background"></div>
             <button class="nav-btn active" data-page="catalog">
                 <span class="nav-icon">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -429,6 +482,7 @@
 
     <!-- Product Modal -->
     <div id="product-modal" class="modal hidden">
+        <div class="modal-background"></div>
         <div class="modal-content">
             <button id="close-modal" class="close-btn">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
