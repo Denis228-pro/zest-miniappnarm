@@ -8,11 +8,11 @@ let services = [];
 let currentPage = 'catalog';
 let deliveryAddress = '';
 
-// Backend configuration
+// Backend configuration - ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbz5_dTUd5B3--C9wFWE7i4Vj_8scGTHWwTEDruN8yQ0dqXIlIqZHI42SJWcxwiWLNf3-w/exec';
 
 // Initialize the app
-function initApp() {
+async function initApp() {
     console.log('Initializing ZeSt app...');
     
     // Initialize Telegram WebApp
@@ -47,6 +47,19 @@ function initApp() {
         showAgeVerification();
     }
     
+    // Test backend connection first
+    const isBackendConnected = await testBackendConnection();
+    if (!isBackendConnected) {
+        console.warn('Backend is not available, using demo mode');
+        if (tg && tg.showPopup) {
+            tg.showPopup({
+                title: 'Демо-режим',
+                message: 'Сервер временно недоступен. Приложение работает в демо-режиме.',
+                buttons: [{ type: 'ok' }]
+            });
+        }
+    }
+    
     // Load products and services
     loadProducts();
     loadServices();
@@ -62,6 +75,33 @@ function initApp() {
     checkSubscriptionStatus();
     
     console.log('ZeSt app initialized successfully');
+}
+
+// Test backend connection
+async function testBackendConnection() {
+    try {
+        console.log('Testing connection to:', BACKEND_URL);
+        
+        // Если URL не настроен, сразу возвращаем false
+        if (BACKEND_URL.includes('YOUR_SCRIPT_ID')) {
+            console.log('Backend URL not configured, using demo mode');
+            return false;
+        }
+        
+        const response = await fetch(`${BACKEND_URL}?action=getProducts`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend connection successful');
+            return true;
+        } else {
+            console.log('❌ Backend connection failed:', response.status);
+            return false;
+        }
+    } catch (error) {
+        console.log('❌ Backend connection error:', error.message);
+        return false;
+    }
 }
 
 // Age verification
@@ -528,9 +568,28 @@ function updateOrderSummary() {
 // Product management - UPDATED FOR GOOGLE SHEETS
 async function loadProducts() {
     try {
+        console.log('Loading products from:', `${BACKEND_URL}?action=getProducts`);
+        
+        // Если URL не настроен, используем мок данные
+        if (BACKEND_URL.includes('YOUR_SCRIPT_ID')) {
+            throw new Error('Backend URL not configured');
+        }
+        
         const response = await fetch(`${BACKEND_URL}?action=getProducts`);
-        if (!response.ok) throw new Error('Network error');
-        products = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Проверяем, если пришла ошибка
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        products = data;
+        console.log('Products loaded:', products.length);
         renderProducts();
     } catch (error) {
         console.error('Error loading products:', error);
@@ -599,9 +658,28 @@ function renderProducts(productsToRender = products) {
 // Services management - UPDATED FOR GOOGLE SHEETS
 async function loadServices() {
     try {
+        console.log('Loading services from:', `${BACKEND_URL}?action=getServices`);
+        
+        // Если URL не настроен, используем мок данные
+        if (BACKEND_URL.includes('YOUR_SCRIPT_ID')) {
+            throw new Error('Backend URL not configured');
+        }
+        
         const response = await fetch(`${BACKEND_URL}?action=getServices`);
-        if (!response.ok) throw new Error('Network error');
-        services = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Проверяем, если пришла ошибка
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        services = data;
+        console.log('Services loaded:', services.length);
         renderServices();
     } catch (error) {
         console.error('Error loading services:', error);
@@ -634,22 +712,93 @@ function renderServices() {
     });
 }
 
-// Order submission - UPDATED FOR GOOGLE SHEETS
+// Fallback order submission for demo
+function submitOrderDemo(orderData) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const orderId = 'DEMO_' + Date.now();
+            console.log('📦 Demo order created:', orderId, orderData);
+            resolve({
+                success: true,
+                orderId: orderId,
+                message: 'Заказ создан в демо-режиме'
+            });
+        }, 1000);
+    });
+}
+
+// Order submission - IMPROVED ERROR HANDLING
 async function submitOrder(orderData) {
+    // Если BACKEND_URL не настроен, используем демо-режим
+    if (BACKEND_URL.includes('YOUR_SCRIPT_ID')) {
+        console.log('🔄 Using demo mode (BACKEND_URL not configured)');
+        return await submitOrderDemo(orderData);
+    }
+    
     try {
+        console.log('🔄 Submitting order to:', BACKEND_URL);
+        console.log('Order data:', orderData);
+
+        // Добавляем таймаут для запроса
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
+
         const response = await fetch(`${BACKEND_URL}?action=createOrder`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(orderData)
+            body: JSON.stringify(orderData),
+            signal: controller.signal
         });
-        
-        if (!response.ok) throw new Error('Order submission failed');
-        return await response.json();
+
+        clearTimeout(timeoutId);
+
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+
+        if (!response.ok) {
+            let errorText = 'Network error';
+            try {
+                errorText = await response.text();
+            } catch (e) {
+                errorText = `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorText);
+        }
+
+        const result = await response.json();
+        console.log('Order submission result:', result);
+
+        if (result.error) {
+            throw new Error(result.error);
+        }
+
+        return result;
     } catch (error) {
-        console.error('Error submitting order:', error);
-        return { success: false, error: error.message };
+        console.error('❌ Error submitting order:', error);
+        
+        if (error.name === 'AbortError') {
+            return { 
+                success: false, 
+                error: 'Request timeout: Server took too long to respond',
+                orderId: 'DEMO_' + Date.now()
+            };
+        }
+        
+        if (error.message.includes('Failed to fetch')) {
+            return { 
+                success: false, 
+                error: 'Network error: Cannot connect to server. Please check your internet connection and try again.',
+                orderId: 'DEMO_' + Date.now()
+            };
+        }
+        
+        return { 
+            success: false, 
+            error: error.message,
+            orderId: 'DEMO_' + Date.now()
+        };
     }
 }
 
@@ -923,7 +1072,7 @@ function checkSubscriptionStatus() {
     }
 }
 
-// Order confirmation - UPDATED FOR GOOGLE SHEETS AND PAYMENT METHODS
+// Order confirmation - IMPROVED WITH BETTER ERROR HANDLING
 async function confirmOrderHandler() {
     if (cart.length === 0) {
         showNotification('Корзина пуста', 'error');
@@ -946,47 +1095,90 @@ async function confirmOrderHandler() {
         return;
     }
     
-    const orderData = {
-        userId: user ? user.id : 'guest',
-        userName: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : 'Гость',
-        userPhone: user ? user.phone_number : '',
-        items: cart,
-        deliveryOption: deliveryOption.value,
-        deliveryAddress: deliveryAddress,
-        deliveryCost: calculateDeliveryCost(),
-        paymentMethod: paymentMethodText,
-        totalAmount: document.getElementById('final-total').textContent,
-        services: getSelectedServices(),
-        exactTime: document.getElementById('exact-time').checked,
-        exactTimeCost: document.getElementById('exact-time').checked ? 10 : 0
-    };
-
-    const result = await submitOrder(orderData);
+    // Показываем индикатор загрузки
+    const confirmButton = document.getElementById('confirm-order');
+    const originalText = confirmButton.innerHTML;
+    confirmButton.innerHTML = '⌛ Отправка заказа...';
+    confirmButton.disabled = true;
     
-    if (result.success) {
-        showNotification(`Заказ #${result.orderId} успешно создан! Способ оплаты: ${paymentMethodText}`, 'success');
+    try {
+        const orderData = {
+            userId: user ? user.id : 'guest',
+            userName: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : 'Гость',
+            userPhone: user ? user.phone_number : '',
+            items: cart,
+            deliveryOption: deliveryOption.value,
+            deliveryAddress: deliveryAddress,
+            deliveryCost: calculateDeliveryCost(),
+            paymentMethod: paymentMethodText,
+            totalAmount: document.getElementById('final-total').textContent,
+            services: getSelectedServices(),
+            exactTime: document.getElementById('exact-time').checked,
+            exactTimeCost: document.getElementById('exact-time').checked ? 10 : 0
+        };
+
+        console.log('📦 Sending order data:', orderData);
+        const result = await submitOrder(orderData);
         
-        // Clear cart after successful order
-        cart = [];
-        deliveryAddress = '';
-        saveCartToStorage();
-        updateCartUI();
-        switchPage('catalog');
-        
-        // Reset address field
-        const addressInput = document.getElementById('delivery-address');
-        if (addressInput) {
-            addressInput.value = '';
+        if (result.success) {
+            showNotification(`✅ Заказ #${result.orderId} успешно создан! Способ оплаты: ${paymentMethodText}`, 'success');
+            
+            // Clear cart after successful order
+            cart = [];
+            deliveryAddress = '';
+            saveCartToStorage();
+            updateCartUI();
+            switchPage('catalog');
+            
+            // Reset address field
+            const addressInput = document.getElementById('delivery-address');
+            if (addressInput) {
+                addressInput.value = '';
+            }
+            
+            // Reset delivery option
+            const selfPickup = document.getElementById('delivery-none');
+            if (selfPickup) {
+                selfPickup.checked = true;
+            }
+            
+        } else {
+            // Если заказ не отправился, но у нас есть demo orderId, все равно очищаем корзину
+            if (result.orderId && result.orderId.startsWith('DEMO_')) {
+                showNotification(`⚠️ Заказ #${result.orderId} создан в демо-режиме. ${result.error}`, 'warning');
+                
+                // Clear cart anyway for demo mode
+                cart = [];
+                deliveryAddress = '';
+                saveCartToStorage();
+                updateCartUI();
+                switchPage('catalog');
+                
+                // Reset form
+                const addressInput = document.getElementById('delivery-address');
+                if (addressInput) {
+                    addressInput.value = '';
+                }
+            } else {
+                showNotification('❌ Ошибка при создании заказа: ' + result.error, 'error');
+            }
         }
-    } else {
-        showNotification('Ошибка при создании заказа: ' + result.error, 'error');
+    } catch (error) {
+        console.error('Unexpected error in confirmOrderHandler:', error);
+        showNotification('❌ Неожиданная ошибка: ' + error.message, 'error');
+    } finally {
+        // Восстанавливаем кнопку в любом случае
+        confirmButton.innerHTML = originalText;
+        confirmButton.disabled = false;
     }
 }
 
 function showNotification(message, type = 'info') {
     if (tg && tg.showPopup) {
         tg.showPopup({
-            title: type === 'success' ? 'Успешно!' : 'Ошибка',
+            title: type === 'success' ? 'Успешно!' : 
+                   type === 'error' ? 'Ошибка' : 
+                   type === 'warning' ? 'Внимание' : 'Информация',
             message: message,
             buttons: [{ type: 'ok' }]
         });
@@ -1093,6 +1285,4 @@ window.switchPage = switchPage;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded, initializing app...');
     initApp();
-
 });
-
