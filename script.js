@@ -48,11 +48,16 @@ async function initApp() {
     }
 
      // Test backend connection
-    const backendConnected = await testBackendConnection();
-    if (!backendConnected) {
-        console.log('Backend connection failed, using demo mode');
-        // Demo mode - Замените на свой URL
-        BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwzA-ihgC3jTm4PK0oHFWvMrAFedsD6rDWTqe8Asy5vsHcY0-RE72SAT6kF_LQ6i_DL/exec'
+    const isBackendConnected = await testBackendConnection();
+    if (!isBackendConnected) {
+        console.warn('Backend is not available, using demo mode');
+        if (tg && tg.showPopup) {
+            tg.showPopup({
+                title: 'Демо-режим',
+                message: 'Сервер временно недоступен. Приложение работает в демо-режиме.',
+                buttons: [{ type: 'ok' }]
+            });
+        }
     }
     
     // Load products and services
@@ -78,7 +83,7 @@ async function testBackendConnection() {
         console.log('Testing connection to:', BACKEND_URL);
         
         // Если URL не настроен, сразу возвращаем false
-        if (BACKEND_URL.includes('YOUR_SCRIPT_ID')) {
+        if (BACKEND_URL.includes('AKfycbwzA-ihgC3jTm4PK0oHFWvMrAFedsD6rDWTqe8Asy5vsHcY0-RE72SAT6kF_LQ6i_DL')) {
             console.log('Backend URL not configured, using demo mode');
             return false;
         }
@@ -1281,6 +1286,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded, initializing app...');
     initApp();
 });
+
 
 
 
