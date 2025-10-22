@@ -1093,4 +1093,5 @@ window.switchPage = switchPage;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded, initializing app...');
     initApp();
+
 });
