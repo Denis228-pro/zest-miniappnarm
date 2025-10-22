@@ -9,7 +9,7 @@ let currentPage = 'catalog';
 let deliveryAddress = '';
 
 // Backend configuration - ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwzA-ihgC3jTm4PK0oHFWvMrAFedsD6rDWTqe8Asy5vsHcY0-RE72SAT6kF_LQ6i_DL/exec';
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyTNPIj-9iPUy4igIHziWrFheSK1DBGKvgK5EJODCCDI0Mfl6qqsLX61THuWKJC02c4/exec';
 
 // Initialize the app
 async function initApp() {
@@ -48,7 +48,7 @@ async function initApp() {
     }
     
     // Test backend connection first
-    const isBackendConnected = await testBackendConnection();
+    /* const isBackendConnected = await testBackendConnection();
     if (!isBackendConnected) {
         console.warn('Backend is not available, using demo mode');
         if (tg && tg.showPopup) {
@@ -58,7 +58,7 @@ async function initApp() {
                 buttons: [{ type: 'ok' }]
             });
         }
-    }
+    } *\
     
     // Load products and services
     loadProducts();
@@ -1286,8 +1286,5 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded, initializing app...');
     initApp();
 });
-
-
-
 
 
